@@ -7,6 +7,7 @@ def _to_camel(s: str) -> str:
 
 
 class CustomBase(BaseModel):
+    __slots__ = ()
     model_config = ConfigDict(
         alias_generator=_to_camel, populate_by_name=True, extra="ignore"
     )

@@ -1,4 +1,4 @@
-from db import _get_db
+from db_clients import _get_mongo
 from fastapi import Depends
 from pydantic import Field
 from typing import Type, TypeVar, Dict, Any, List
@@ -6,15 +6,15 @@ from models.CustomBase import CustomBase
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from bson import ObjectId
 
-T = TypeVar("T", bound="Document")
+T = TypeVar("T", bound="MongoDocument")
 
 
-class Document(CustomBase):
+class MongoDocument(CustomBase):
     id: str = Field(default="", allias="_id")
 
     @classmethod
     async def _get_collection(
-        cls, db: AsyncIOMotorDatabase = Depends(_get_db)
+        cls, db: AsyncIOMotorDatabase = Depends(_get_mongo)
     ) -> AsyncIOMotorCollection:
         return db[cls.__name__.lower() + "s"]
 
@@ -37,6 +37,7 @@ class Document(CustomBase):
         upsert: bool = False,
         collection: AsyncIOMotorCollection = Depends(_get_collection),
     ) -> bool:
+        """do i need to check length of found docs first?"""
         if isinstance(update_data, cls):
             update_data = update_data.model_dump(by_alias=True, exclude={"id"})
         result = await collection.update_many(
@@ -45,7 +46,28 @@ class Document(CustomBase):
         return result.modified_count > 0
 
     @classmethod
-    async def get_one(
+    async def get(
+        cls: Type[T],
+        query: str | Dict[str, Any],
+        many: bool = False,
+    ) -> List[T] | T | None:
+        match many:
+            case True:
+                if isinstance(query, str):
+                    raise  # add ex
+                return cls._get_many(query=query)
+            case False:
+                if isinstance(query, str):
+                    return cls._get_by_id(id=query)
+                elif isinstance(query, Dict[str, Any]):
+                    return cls._get_one(query=query)
+                else:
+                    raise
+            case _:
+                raise
+
+    @classmethod
+    async def _get_one(
         cls: Type[T],
         query: Dict[str, Any],
         collection: AsyncIOMotorCollection = Depends(_get_collection),
@@ -54,7 +76,7 @@ class Document(CustomBase):
         return cls(**data) if data else None
 
     @classmethod
-    async def get_by_id(
+    async def _get_by_id(
         cls: Type[T],
         id: str,
         collection: AsyncIOMotorCollection = Depends(_get_collection),
@@ -63,7 +85,7 @@ class Document(CustomBase):
         return cls(**data) if data else None
 
     @classmethod
-    async def get_many(
+    async def _get_many(
         cls: Type[T],
         query: Dict[str, Any],
         collection: AsyncIOMotorCollection = Depends(_get_collection),
@@ -72,7 +94,28 @@ class Document(CustomBase):
         return data
 
     @classmethod
-    async def delete_one(
+    async def delete(
+        cls: Type[T],
+        query: str | Dict[str, Any],
+        many: bool = False,
+    ) -> bool:
+        match many:
+            case True:
+                if isinstance(query, str):
+                    raise  # add ex
+                return cls._delete_many(query=query)
+            case False:
+                if isinstance(query, str):
+                    return cls._delete_by_id(id=query)
+                elif isinstance(query, Dict[str, Any]):
+                    return cls._delete_one(query=query)
+                else:
+                    raise
+            case _:
+                raise
+
+    @classmethod
+    async def _delete_one(
         cls: Type[T],
         query: Dict[str, Any],
         collection: AsyncIOMotorCollection = Depends(_get_collection),
@@ -81,7 +124,7 @@ class Document(CustomBase):
         return result.deleted_count > 0
 
     @classmethod
-    async def delete_by_id(
+    async def _delete_by_id(
         cls: Type[T],
         id: str,
         collection: AsyncIOMotorCollection = Depends(_get_collection),
@@ -90,7 +133,7 @@ class Document(CustomBase):
         return result.deleted_count > 0
 
     @classmethod
-    async def delete_many(
+    async def _delete_many(
         cls: Type[T],
         query: Dict[str, Any],
         collection: AsyncIOMotorCollection = Depends(_get_collection),

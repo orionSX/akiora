@@ -1,15 +1,18 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from db import MongoDB
+from db_clients import MongoDB
 import os
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    MongoDB.connect(os.getenv("MONDODB_URI", "mongodb://localhost:27011"), "Akiora")
+    await MongoDB.connect(
+        os.getenv("MONGO_DB_URI", "mongodb://localhost:27011"), "Akiora"
+    )
+
     yield
-    MongoDB.disconnect()
+    await MongoDB.disconnect()
 
 
 origins = ["*"]
