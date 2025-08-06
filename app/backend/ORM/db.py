@@ -6,13 +6,12 @@ class MongoDB:
     _db: AsyncIOMotorDatabase = None
 
     @classmethod
-    def connect(cls, uri: str, db_name: str)->None:
+    def connect(cls, uri: str, db_name: str) -> None:
         cls._client = AsyncIOMotorClient(uri)
         cls._db = cls._client[db_name]
-        
 
     @classmethod
-    def disconnect(cls)->None:
+    def disconnect(cls) -> None:
         if cls._client:
             cls._client.close()
 
@@ -22,6 +21,6 @@ class MongoDB:
             raise RuntimeError("MongoDB not connected!")
         return cls._db
 
-async def _get_db()->AsyncIOMotorDatabase:
-    return MongoDB.get_db()
 
+async def _get_db() -> AsyncIOMotorDatabase:
+    return MongoDB.get_db()
