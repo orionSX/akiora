@@ -1,5 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-# from aioredis import Redis, from_url
+from redis.asyncio.connection import ConnectionPool
+from redis.asyncio import Redis
 
 
 class MongoDB:
@@ -23,31 +24,31 @@ class MongoDB:
         return cls._db
 
 
-# class RedisClient:
-#     _client: Redis | None = None
+class RedisClient:
+    _pool: ConnectionPool | None = None
+    _client: Redis | None = None
 
-#     @classmethod
-#     async def connect(cls, uri: str) -> None:
-#         cls._client = await from_url(
-#             uri, encoding="utf-8", decode_responses=True, max_connections=100
-#         )
+    @classmethod
+    async def connect(cls, uri: str) -> None:
+        cls._pool = ConnectionPool.from_url(uri)
+        cls._client = Redis.from_pool(cls._pool)
 
-#     @classmethod
-#     async def disconnect(cls) -> None:
-#         if cls._client:
-#             await cls._client.close()
-#             cls._client = None
+    @classmethod
+    async def disconnect(cls) -> None:
+        if cls._client:
+            await cls._client.aclose()
+            cls._client = None
 
-#     @classmethod
-#     def get_client(cls) -> Redis:
-#         if cls._client is None:
-#             raise RuntimeError("Redis not connected!")
-#         return cls._client
+    @classmethod
+    def get_client(cls) -> Redis:
+        if cls._client is None:
+            raise RuntimeError("Redis not connected!")
+        return cls._client
 
 
 async def _get_mongo() -> AsyncIOMotorDatabase:
     return MongoDB.get_db()
 
 
-# async def _get_redis() -> Redis:
-#     return RedisClient.get_client()
+async def _get_redis() -> Redis:
+    return RedisClient.get_client()

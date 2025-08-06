@@ -37,6 +37,7 @@ services:
     restart: unless-stopped
     environment:
       - MONGO_DB_URI=${MONGO_DB_URI_CHILL}
+      - REDIS_URI=${REDIS_URI}
     depends_on:
       - dragonfly
       - mongodb

@@ -6,10 +6,11 @@ RUN pip install uv
 
 
 COPY pyproject.toml ./
+RUN uv pip install --system .
 COPY . .
 
 
-RUN uv pip install --system .
+
 
 
 EXPOSE 8000
