@@ -24,7 +24,7 @@ class MongoDB:
         return cls._db
 
 
-class RedisClient:
+class DragonClient:
     _pool: ConnectionPool | None = None
     _client: Redis | None = None
 
@@ -51,4 +51,4 @@ async def _get_mongo() -> AsyncIOMotorDatabase:
 
 
 async def _get_redis() -> Redis:
-    return RedisClient.get_client()
+    return DragonClient.get_client()

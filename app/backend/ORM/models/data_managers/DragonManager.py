@@ -1,17 +1,17 @@
 from fastapi import Depends
 from db_clients import _get_redis, Redis
 from datetime import timedelta
-from typing import Type, Dict, Any, List
+from typing import Dict, Any, List, TypeVar
 import pickle
 import zlib
 # orjson could be used maybe idk yet
 
+T = TypeVar("T")
 
-class RedisCache:
+
+class DragonManager:
     @classmethod
-    async def get_data(
-        cls, key: str, cache: Redis = Depends(_get_redis)
-    ) -> object | None:
+    async def get_data(cls, key: str, cache: Redis = Depends(_get_redis)) -> T | None:
         raw_data = await cache.get(key)
         if raw_data:
             return pickle.load(zlib.decompress(raw_data))
@@ -21,15 +21,19 @@ class RedisCache:
     async def set_data(
         cls,
         key: str,
-        data: object,
+        data: T,
         ex: int | timedelta | None,
         cache: Redis = Depends(_get_redis),
     ) -> bool:
+        if ex is not None and not isinstance(ex, (int, timedelta)):
+            raise
         match ex:
             case None:
                 await cache.set(key, zlib.compress(pickle.dumps(data), level=6))
+                return True
             case _:
                 await cache.set(key, zlib.compress(pickle.dumps(data), level=6), ex=ex)
+                return True
 
     @classmethod
     async def _get_valid_key(cls, key: Dict[str, Any] | str) -> str:
@@ -55,10 +59,10 @@ class RedisCache:
 
     @classmethod
     async def get(
-        cls: Type["RedisCache"],
+        cls,
         key: str | Dict[str, Any],
         many: bool = False,
-    ) -> List | Dict[str, Any] | None:
+    ) -> List[T] | T | None:
         valid_key = await cls._get_valid_key(key)
         data = await cls.get_data(key=valid_key)
         match many:
@@ -74,7 +78,7 @@ class RedisCache:
 
     @classmethod
     async def delete(
-        cls: Type["RedisCache"],
+        cls,
         key: str | Dict[str, Any],
         cache: Redis = Depends(_get_redis),
     ) -> bool:
@@ -84,9 +88,9 @@ class RedisCache:
 
     @classmethod
     async def create(
-        cls: Type["RedisCache"],
+        cls,
         key: str | Dict[str, Any],
-        value: Dict[str, Any],
+        value: T,
         expire: timedelta | int | None,
     ) -> bool:
         valid_key = await cls._get_valid_key(key)
@@ -96,9 +100,9 @@ class RedisCache:
 
     @classmethod
     async def update(
-        cls: Type["RedisCache"],
+        cls,
         key: str | Dict[str, Any],
-        value: Dict[str, Any],
+        value: T,
         expire: timedelta | int | None,
     ) -> bool:
         valid_key = await cls._get_valid_key(key)
