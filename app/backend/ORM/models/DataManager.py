@@ -75,6 +75,7 @@ class DataManager(Protocol):
 
     @classmethod
     async def delete(
+        cls,
         query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
         many: bool,
         by_id: bool,
