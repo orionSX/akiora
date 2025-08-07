@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from bson import ObjectId
 from models.DataManager import CreateFail, manage_crud, BadArgs
 from models.Document import Document
+from pydantic import validate_call
 
 T = TypeVar("T", bound=Document)
 
@@ -96,6 +97,7 @@ class MongoManager(Generic[T]):
         return db[cls._model_class.__name__.lower() + "s"]
 
     @classmethod
+    @validate_call
     async def _create_many(
         cls,
         update_data: List[T] | List[Dict[str, Any]],
@@ -114,6 +116,7 @@ class MongoManager(Generic[T]):
         )
 
     @classmethod
+    @validate_call
     async def _create_one(
         cls,
         update_data: T | Dict[str, Any],
@@ -131,6 +134,7 @@ class MongoManager(Generic[T]):
         )
 
     @classmethod
+    @validate_call
     async def _update_many(
         cls,
         query: Dict[str, Any],
@@ -143,6 +147,7 @@ class MongoManager(Generic[T]):
         return result.modified_count == result.modified_count
 
     @classmethod
+    @validate_call
     async def _update_many_by_id(
         cls,
         query: List[str | ObjectId],
@@ -158,6 +163,7 @@ class MongoManager(Generic[T]):
         return result.modified_count == result.modified_count
 
     @classmethod
+    @validate_call
     async def _update_one(
         cls,
         query: Dict[str, Any],
@@ -170,6 +176,7 @@ class MongoManager(Generic[T]):
         return result.modified_count == result.modified_count
 
     @classmethod
+    @validate_call
     async def _update_one_by_id(
         cls,
         query: str | ObjectId,
@@ -183,6 +190,7 @@ class MongoManager(Generic[T]):
         return result.modified_count == result.matched_count
 
     @classmethod
+    @validate_call
     async def _get_one(
         cls,
         query: Dict[str, Any],
@@ -191,6 +199,7 @@ class MongoManager(Generic[T]):
         return await collection.find_one(query)
 
     @classmethod
+    @validate_call
     async def _get_one_by_id(
         cls,
         query: str | ObjectId,
@@ -200,6 +209,7 @@ class MongoManager(Generic[T]):
         return await collection.find_one({"_id": query})
 
     @classmethod
+    @validate_call
     async def _get_many(
         cls,
         query: Dict[str, Any],
@@ -208,6 +218,7 @@ class MongoManager(Generic[T]):
         return await collection.find(query).to_list()
 
     @classmethod
+    @validate_call
     async def _get_many_by_id(
         cls,
         query: List[str | ObjectId],
@@ -218,6 +229,7 @@ class MongoManager(Generic[T]):
         return await collection.find({"_id": {"$in": query}}).to_list()
 
     @classmethod
+    @validate_call
     async def _delete_one(
         cls,
         query: Dict[str, Any],
@@ -227,6 +239,7 @@ class MongoManager(Generic[T]):
         return result.deleted_count > 0
 
     @classmethod
+    @validate_call
     async def _delete_one_by_id(
         cls,
         query: str | ObjectId,
@@ -237,6 +250,7 @@ class MongoManager(Generic[T]):
         return result.deleted_count > 0
 
     @classmethod
+    @validate_call
     async def _delete_many(
         cls,
         query: Dict[str, Any],
@@ -248,6 +262,7 @@ class MongoManager(Generic[T]):
         return result.deleted_count > 0
 
     @classmethod
+    @validate_call
     async def _delete_many_by_id(
         cls,
         query: List[str | ObjectId],

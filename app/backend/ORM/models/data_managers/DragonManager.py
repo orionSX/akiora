@@ -1,15 +1,19 @@
 from fastapi import Depends
 from db_clients import _get_redis, Redis
 from datetime import timedelta
-from typing import Dict, Any, List, TypeVar
+from typing import Dict, Any, List, TypeVar, Generic, Type
 import pickle
 import zlib
+from models.Document import Document
+from bson import ObjectId
 # orjson could be used maybe idk yet
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Document)
 
 
-class DragonManager:
+class DragonManager(Generic[T]):
+    _model_class: Type[T]
+
     @classmethod
     async def get_data(cls, key: str, cache: Redis = Depends(_get_redis)) -> T | None:
         raw_data = await cache.get(key)
@@ -25,8 +29,6 @@ class DragonManager:
         ex: int | timedelta | None,
         cache: Redis = Depends(_get_redis),
     ) -> bool:
-        if ex is not None and not isinstance(ex, (int, timedelta)):
-            raise
         match ex:
             case None:
                 await cache.set(key, zlib.compress(pickle.dumps(data), level=6))
@@ -36,12 +38,19 @@ class DragonManager:
                 return True
 
     @classmethod
-    async def _get_valid_key(cls, key: Dict[str, Any] | str) -> str:
-        if isinstance(key, str):
-            return key
+    async def _get_valid_key(
+        cls, key: Dict[str, Any] | str | ObjectId | List[str | ObjectId]
+    ) -> str:
+        base_str = cls._model_class.__name__.lower() + "s:"
+        if isinstance(key, ObjectId):
+            base_str += str(key)
+        elif isinstance(key, str):
+            base_str += key
         elif isinstance(key, Dict[str, Any]):
-            return await cls._serialize_key(key)
-        raise
+            base_str += await cls._serialize_key(key)
+        elif isinstance(key, List[str | ObjectId]):
+            base_str += ":".join(str(x) for x in key)
+        return base_str
 
     @classmethod
     async def _serialize_key(cls, key_dict: Dict[str, Any]) -> str:
@@ -60,52 +69,60 @@ class DragonManager:
     @classmethod
     async def get(
         cls,
-        key: str | Dict[str, Any],
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
         many: bool = False,
+        by_id: bool = False,
     ) -> List[T] | T | None:
-        valid_key = await cls._get_valid_key(key)
+        valid_key = await cls._get_valid_key(query)
         data = await cls.get_data(key=valid_key)
-        match many:
-            case True:
-                if not isinstance(data, List):
-                    raise
-                return data
+        if data:
+            match many:
+                case True:
+                    if not isinstance(data, List):
+                        raise
+                    return data
 
-            case False:
-                return data
-            case _:
-                raise
+                case False:
+                    return data
+                case _:
+                    raise
+        return data
 
     @classmethod
     async def delete(
         cls,
-        key: str | Dict[str, Any],
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
         cache: Redis = Depends(_get_redis),
+        many: bool = False,
+        by_id: bool = False,
     ) -> bool:
-        valid_key = await cls._get_valid_key(key)
+        valid_key = await cls._get_valid_key(query)
         await cache.unlink(valid_key)
         return True
 
     @classmethod
     async def create(
         cls,
-        key: str | Dict[str, Any],
-        value: T,
-        expire: timedelta | int | None,
-    ) -> bool:
-        valid_key = await cls._get_valid_key(key)
-        await cls.set_data(key=valid_key, data=value, ex=expire)
+        update_data: T | Dict[str, Any],
+        many: bool = False,
+    ) -> T | Dict[str, Any] | List[T] | Dict[str, Any]:
+        valid_key = await cls._get_valid_key("last_created")
+        await cls.set_data(key=valid_key, data=update_data, ex=timedelta(hours=1))
 
-        return True
+        return await cls.get(
+            query="last_created",
+            many=many,
+        )
 
     @classmethod
     async def update(
         cls,
-        key: str | Dict[str, Any],
-        value: T,
-        expire: timedelta | int | None,
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        update_data: T,
+        many: bool = False,
+        by_id: bool = False,
     ) -> bool:
-        valid_key = await cls._get_valid_key(key)
-        await cls.set_data(key=valid_key, data=value, ex=expire)
+        valid_key = await cls._get_valid_key(query)
+        await cls.set_data(key=valid_key, data=update_data, ex=timedelta(hours=1))
 
         return True

@@ -1,5 +1,6 @@
 from typing import Protocol, Dict, Any, TypeVar, List, Callable, Awaitable
 from models.Document import Document
+from bson import ObjectId
 
 D = TypeVar("D")
 
@@ -49,19 +50,36 @@ class DataManager(Protocol):
     def _get_data_storage(cls) -> str: ...
     @classmethod
     async def get(
-        cls, find_query: str | Dict[str, Any], many: bool
+        cls,
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        many: bool,
+        by_id: bool,
+        **kwargs,
     ) -> List[D] | D | None: ...
     @classmethod
-    async def create(cls, create_query: D | Dict[str, Any]) -> D | List[D]: ...
+    async def create(
+        cls,
+        update_data: D | Dict[str, Any] | List[D] | List[Dict[str, Any]],
+        many: bool,
+        **kwargs,
+    ) -> D | List[D]: ...
     @classmethod
     async def update(
         cls,
-        find_query: str | Dict[str, Any],
-        update_query: D | Dict[str, Any],
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        update_data: D | Dict[str, Any] | List[D] | List[Dict[str, Any]],
+        many: bool,
+        by_id: bool,
+        **kwargs,
     ) -> bool: ...
 
     @classmethod
-    async def delete(find_query: str | Dict[str, Any], many: bool) -> bool: ...
+    async def delete(
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        many: bool,
+        by_id: bool,
+        **kwargs,
+    ) -> bool: ...
 
 
 async def manage_crud(
@@ -76,6 +94,8 @@ async def manage_crud(
     if_single: Callable[..., Awaitable] | None = None,
     if_single_by_id: Callable[..., Awaitable] | None = None,
 ):
+    """redis support will be added l8r maybe :p"""
+
     await _validate_manager(
         data_storage=data_storage,
         many=many,
@@ -87,6 +107,7 @@ async def manage_crud(
         query=query,
         update_data=update_data,
     )
+
     kwargs = {
         k: v
         for k, v in [("query", query), ("update_data", update_data)]
