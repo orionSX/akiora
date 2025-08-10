@@ -5,8 +5,10 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from bson import ObjectId
 from models.DataManager import CreateFail, manage_crud, BadArgs
 from models.Document import Document
-from pydantic import validate_call
+from pydantic import validate_call, ConfigDict
 
+
+validate_call = validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 T = TypeVar("T", bound=Document)
 
 

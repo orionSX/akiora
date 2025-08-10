@@ -1,31 +1,4 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from db_clients import MongoDB, DragonClient
-import os
+from setup import app
+from routers.user_service.main import router as user_service_router
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await MongoDB.connect(os.getenv("MONGO_DB_URI"), "Akiora")
-    await DragonClient.connect(os.getenv("REDIS_URI"))
-
-    yield
-    await MongoDB.disconnect()
-    await DragonClient.disconnect()
-
-
-origins = ["*"]
-app = FastAPI(lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.get("/")
-def get():
-    return {"Status": "Started"}
+app.include_router(user_service_router)

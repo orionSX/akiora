@@ -1,6 +1,8 @@
 from typing import Protocol, Dict, Any, TypeVar, List, Callable, Awaitable
 from models.Document import Document
 from bson import ObjectId
+from abc import abstractmethod
+from typing_extensions import runtime_checkable
 
 D = TypeVar("D")
 
@@ -45,6 +47,7 @@ class BadArgs(DataManagerError):
     pass
 
 
+@runtime_checkable
 class DataManager(Protocol):
     @classmethod
     def _get_data_storage(cls) -> str: ...

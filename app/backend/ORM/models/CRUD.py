@@ -20,10 +20,11 @@ class CRUD(BaseModel):
     async def get(
         self,
         *,
-        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        query: BaseModel,
         many: bool = False,
         by_id: bool = False,
     ) -> List[Document] | Document | None:
+        query = query.model_dump(exclude_none=True)
         tasks = [
             asyncio_create_task(
                 self._get_by_manager(
@@ -82,7 +83,7 @@ class CRUD(BaseModel):
     async def update(
         self,
         *,
-        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId] = {},
         update_data: Document | Dict[str, Any] | List[Document] | List[Dict[str, Any]],
         many: bool,
         by_id: bool,
@@ -110,7 +111,7 @@ class CRUD(BaseModel):
     async def delete(
         self,
         *,
-        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId],
+        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId] = {},
         many: bool = False,
         by_id: bool = False,
     ) -> bool:

@@ -60,3 +60,4 @@ __pypackages__/
 Thumbs.db
 
 docker_volumes/
+sandbox.py

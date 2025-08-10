@@ -6,13 +6,19 @@ import pickle
 import zlib
 from models.Document import Document
 from bson import ObjectId
-# orjson could be used maybe idk yet
+from pydantic import validate_call, ConfigDict
 
+# orjson could be used maybe idk yet
+validate_call = validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 T = TypeVar("T", bound=Document)
 
 
 class DragonManager(Generic[T]):
     _model_class: Type[T]
+
+    @classmethod
+    def _get_data_storage(cls) -> str:
+        return f"Dragon : = {(cls._model_class.__name__.lower() + 's',)}"
 
     @classmethod
     async def get_data(cls, key: str, cache: Redis = Depends(_get_redis)) -> T | None:
