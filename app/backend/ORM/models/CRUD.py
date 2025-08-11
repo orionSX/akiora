@@ -8,7 +8,6 @@ from typing import List, Dict, Any, Type
 from pydantic import BaseModel
 from models.Document import Document
 from models.DataManager import DataManager
-from bson import ObjectId
 
 
 class CRUD(BaseModel):
@@ -19,17 +18,12 @@ class CRUD(BaseModel):
 
     async def get(
         self,
-        *,
         query: BaseModel,
-        many: bool = False,
-        by_id: bool = False,
     ) -> List[Document] | Document | None:
-        query = query.model_dump(exclude_none=True)
+        valid_query = await self.model.get_find_query(query)
         tasks = [
             asyncio_create_task(
-                self._get_by_manager(
-                    manager=manager, query=query, many=many, by_id=by_id
-                )
+                self._get_by_manager(manager=manager, query=valid_query)
             )
             for manager in self.data_managers
         ]
@@ -53,14 +47,14 @@ class CRUD(BaseModel):
 
     async def create(
         self,
-        *,
-        update_data: Document | Dict[str, Any] | List[Document] | List[Dict[str, Any]],
-        many: bool,
+        create_data: BaseModel,
     ) -> List[Document] | Document | None:
+        valid_create_data = await self.model.get_create_data(create_data)
         tasks = [
             asyncio_create_task(
                 self._create_by_manager(
-                    manager=manager, update_data=update_data, many=many
+                    manager=manager,
+                    create_data=valid_create_data,
                 )
             )
             for manager in self.data_managers
@@ -83,19 +77,15 @@ class CRUD(BaseModel):
     async def update(
         self,
         *,
-        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId] = {},
-        update_data: Document | Dict[str, Any] | List[Document] | List[Dict[str, Any]],
-        many: bool,
-        by_id: bool,
+        query: BaseModel,
+        update_data: BaseModel,
     ) -> bool:
+        valid_query = await self.model.get_find_query(query)
+        valid_update_data = await self.model.get_update_data(update_data)
         tasks = [
             asyncio_create_task(
                 self._update_by_manager(
-                    manager=manager,
-                    query=query,
-                    update_data=update_data,
-                    many=many,
-                    by_id=by_id,
+                    manager=manager, query=valid_query, update_data=valid_update_data
                 )
             )
             for manager in self.data_managers
@@ -110,16 +100,12 @@ class CRUD(BaseModel):
 
     async def delete(
         self,
-        *,
-        query: str | ObjectId | Dict[str, Any] | List[str | ObjectId] = {},
-        many: bool = False,
-        by_id: bool = False,
+        query: BaseModel,
     ) -> bool:
+        valid_query = await self.model.get_find_query(query)
         tasks = [
             asyncio_create_task(
-                self._delete_by_manager(
-                    manager=manager, query=query, many=many, by_id=by_id
-                )
+                self._delete_by_manager(manager=manager, query=valid_query)
             )
             for manager in self.data_managers
         ]
@@ -132,10 +118,10 @@ class CRUD(BaseModel):
         return all(res)
 
     async def _get_by_manager(
-        self, *, manager: DataManager, query, many: bool, by_id: bool
+        self, *, manager: type[DataManager], query: Dict[str, Any]
     ) -> List[Document] | Document | None:
         try:
-            data = await manager.get(query=query, many=many, by_id=by_id)
+            data = await manager.get(query=query)
             if data:
                 if isinstance(data, List):
                     return [self.model.model_validate(item) for item in data]
@@ -146,35 +132,40 @@ class CRUD(BaseModel):
             return None
 
     async def _create_by_manager(
-        self, manager: DataManager, update_data, many: bool
-    ) -> List[Document] | Document | None:
+        self, manager: Type[DataManager], create_data: List[Dict[str, Any]]
+    ) -> List[Document]:
         try:
-            data = await manager.create(update_data=update_data, many=many)
+            data = await manager.create(create_data)
             if data:
                 if isinstance(data, List):
                     return [self.model.model_validate(item) for item in data]
-                return self.model.model_validate(data)
-            return None
+                return [self.model.model_validate(data)]
 
         except Exception:
-            return None
+            pass
+        finally:
+            return []
 
     async def _update_by_manager(
-        self, manager: DataManager, query, update_data, many: bool, by_id: bool
+        self,
+        manager: Type[DataManager],
+        query: Dict[str, Any],
+        update_data: Dict[str, Any],
     ) -> bool:
         try:
-            return await manager.update(
-                query=query, update_data=update_data, many=many, by_id=by_id
-            )
+            return await manager.update(query=query, update_data=update_data)
 
         except Exception:
             return False
 
     async def _delete_by_manager(
-        self, *, manager: DataManager, query, many: bool, by_id: bool
+        self,
+        *,
+        manager: Type[DataManager],
+        query: Dict[str, Any],
     ) -> bool:
         try:
-            return await manager.delete(query=query, many=many, by_id=by_id)
+            return await manager.delete(query=query)
 
         except Exception:
             return False
