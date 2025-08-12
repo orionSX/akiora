@@ -99,7 +99,7 @@ wheels = [
 ]
 
 [[package]]
-name = "orm"
+name = "data-layer-service"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

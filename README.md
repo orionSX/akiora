@@ -21,5 +21,5 @@ cat init-mongo-example.js >> ./docker_volumes/mongo_init/init-mongo.js && \
 docker-compose up --build -d
 ```
 ## Services map
-- localhost:8000 - **ORM**
+- localhost:8000 - **data-layer-service**
 

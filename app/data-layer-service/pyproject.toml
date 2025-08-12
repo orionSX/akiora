@@ -1,5 +1,5 @@
 [project]
-name = "orm"
+name = "data-layer-service"
 version = "0.1.0"
 description = "service for IO operations"
 readme = "README.md"
