@@ -1,0 +1,12 @@
+[project]
+name = "orm"
+version = "0.1.0"
+description = "service for IO operations"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.116.1",
+    "motor>=3.7.1",
+    "redis>=6.3.0",
+    "uvicorn>=0.35.0",
+]

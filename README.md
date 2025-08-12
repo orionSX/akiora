@@ -3,13 +3,22 @@
   
   # Akiora
 
-  [![Discord](https://img.shields.io/badge/Discord-Join-7289DA?logo=discord)](https://discord.gg/8wDKb7ZFE5)
-  [![Telegram](https://img.shields.io/badge/Telegram-Join-26A5E4?logo=telegram)](https://t.me/+_M_4z0KXKK5kOGUy)
   
 </div>
 
+
 ## About
 
-League of Legends platform to unite the community
+League of Legends platform 
 
+## Build
+run this ->
+touch .env && cat .env_example >> .env && \
+mkdir -p ./docker_volumes/mongo_init && \
+touch ./docker_volumes/mongo_init/init-mongo.js && \
+cat init-mongo-example.js >> ./docker_volumes/mongo_init/init-mongo.js && \
+docker-compose up --build -d
+
+## Services map
+localhost:8000 - ORM
 

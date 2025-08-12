@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    container_name: dragonfly
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./docker_volumes/dragonfly_data:/data
+    restart: unless-stopped
+    environment:
+      - DEFAULT_MAX_MEMORY=1GB  
+    healthcheck:
+        test: ["CMD", "redis-cli", "ping"]
+        interval: 5s
+        timeout: 30s
+        retries: 3
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./docker_volumes/mongo_data:/data/db
+      - ./docker_volumes/mongo_config:/data/configdb
+      - ./docker_volumes/mongo_init:/docker-entrypoint-initdb.d
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_DB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_DB_PASSWORD}
+      - MONGO_INITDB_DATABASE=authdb
+    command: mongod --auth --bind_ip_all
+    healthcheck:
+      test: ["CMD", "mongosh", "--username", "admin", "--password", "password123", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 30s
+      retries: 3
+    restart: unless-stopped
+
+  backend_orm:
+    build:
+      context: ./app/backend/ORM
+    container_name: backend_orm
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      - MONGO_DB_URI=${MONGO_DB_URI}
+      - REDIS_URI=${REDIS_URI}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+
