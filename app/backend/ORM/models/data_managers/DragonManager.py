@@ -1,5 +1,4 @@
-from fastapi import Depends
-from db_clients import _get_redis, Redis
+from db_clients import DragonClient
 from datetime import timedelta
 from typing import Dict, Any, List, TypeVar, Generic, Type
 import pickle
@@ -22,12 +21,12 @@ class DragonManager(Generic[T]):
         return f"Dragon : = {(cls._model_class.__name__.lower() + 's',)}"
 
     @classmethod
-    async def get_data(
-        cls, key: str, cache: Redis = Depends(_get_redis)
-    ) -> List[Dict[str, Any]]:
+    async def get_data(cls, key: str) -> List[Dict[str, Any]]:
+        cache = DragonClient.get_client()
         raw_data = await cache.get(key)
         if raw_data:
-            return pickle.load(zlib.decompress(raw_data))
+            decompressed_data = zlib.decompress(raw_data)
+            return pickle.loads(decompressed_data)
         return []
 
     @classmethod
@@ -35,11 +34,11 @@ class DragonManager(Generic[T]):
         cls,
         key: str,
         data: List[Dict[str, Any]] | Dict[str, Any],
-        cache: Redis = Depends(_get_redis),
     ) -> bool:
-        await cache.set(
-            key, zlib.compress(pickle.dumps(data), level=6), ex=_CACHE_EXPIRE_TIME
-        )
+        cache = DragonClient.get_client()
+        pickled_data = pickle.dumps(data)
+        compressed_data = zlib.compress(pickled_data, level=6)
+        await cache.set(key, compressed_data, ex=_CACHE_EXPIRE_TIME)
         return True
 
     @classmethod
@@ -74,8 +73,8 @@ class DragonManager(Generic[T]):
     async def delete(
         cls,
         query: Dict[str, Any],
-        cache: Redis = Depends(_get_redis),
     ) -> bool:
+        cache = DragonClient.get_client()
         valid_key = await cls._get_valid_key(query)
         await cache.unlink(valid_key)
         return True
@@ -88,9 +87,7 @@ class DragonManager(Generic[T]):
         valid_key = await cls._get_valid_key({"last_created": True})
         await cls.set_data(key=valid_key, data=create_data)
 
-        return await cls.get(
-            query={"last_created": True},
-        )
+        return []
 
     @classmethod
     async def update(

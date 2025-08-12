@@ -1,6 +1,12 @@
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+from motor.motor_asyncio import (
+    AsyncIOMotorClient,
+    AsyncIOMotorCollection,
+    AsyncIOMotorDatabase,
+)
 from redis.asyncio.connection import ConnectionPool
 from redis.asyncio import Redis
+
+# TODO : create indexes on startup for mongo
 
 
 class MongoDB:
@@ -9,7 +15,11 @@ class MongoDB:
 
     @classmethod
     async def connect(cls, uri: str, db_name: str) -> None:
-        cls._client = AsyncIOMotorClient(uri)
+        cls._client = AsyncIOMotorClient(
+            uri,
+            serverSelectionTimeoutMS=5000,
+            connectTimeoutMS=10000,
+        )
         cls._db = cls._client[db_name]
 
     @classmethod
@@ -18,7 +28,7 @@ class MongoDB:
             cls._client.close()
 
     @classmethod
-    async def get_db(cls) -> AsyncIOMotorDatabase:
+    def get_db(cls) -> AsyncIOMotorDatabase:
         if cls._db is None:
             raise RuntimeError("MongoDB not connected!")
         return cls._db
@@ -46,9 +56,12 @@ class DragonClient:
         return cls._client
 
 
-async def _get_mongo() -> AsyncIOMotorDatabase:
-    return MongoDB.get_db()
+def _get_mongo(key: str | None = None) -> AsyncIOMotorCollection | AsyncIOMotorDatabase:
+    db = MongoDB.get_db()
+    if key:
+        return db[key]
+    return db
 
 
-async def _get_redis() -> Redis:
+def _get_dragon():
     return DragonClient.get_client()
