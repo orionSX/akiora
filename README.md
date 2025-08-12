@@ -12,13 +12,14 @@
 League of Legends platform 
 
 ## Build
-run this ->
+To build it on Linux with docker run this -> \
+```console
 touch .env && cat .env_example >> .env && \
 mkdir -p ./docker_volumes/mongo_init && \
 touch ./docker_volumes/mongo_init/init-mongo.js && \
 cat init-mongo-example.js >> ./docker_volumes/mongo_init/init-mongo.js && \
 docker-compose up --build -d
-
+```
 ## Services map
-localhost:8000 - ORM
+- localhost:8000 - **ORM**
 
