@@ -1,6 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Dict, Any, List
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from typing import Dict, Any, List, Union
 from abc import abstractmethod
+from bson import ObjectId
 
 
 class Document(BaseModel):
@@ -11,6 +12,14 @@ class Document(BaseModel):
         validate_by_name=True,
         extra="allow",
     )
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def convert_objectid_to_str(cls, v):
+        """Convert ObjectId to string if needed"""
+        if isinstance(v, ObjectId):
+            return str(v)
+        return v
 
     @classmethod
     @abstractmethod

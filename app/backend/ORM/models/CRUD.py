@@ -15,11 +15,12 @@ class CRUD(BaseModel):
 
     data_managers: List[Type[DataManager]]
     model: Type[Document]
+    response_schema: Type[BaseModel] | None = None
 
     async def get(
         self,
         query: BaseModel,
-    ) -> List[Document] | Document | None:
+    ) -> List[BaseModel] | BaseModel | None:
         valid_query = await self.model.get_find_query(query)
         tasks = [
             asyncio_create_task(
@@ -48,8 +49,9 @@ class CRUD(BaseModel):
     async def create(
         self,
         create_data: BaseModel,
-    ) -> List[Document] | Document | None:
+    ) -> List[BaseModel] | BaseModel | None:
         valid_create_data = await self.model.get_create_data(create_data)
+
         tasks = [
             asyncio_create_task(
                 self._create_by_manager(
@@ -66,7 +68,7 @@ class CRUD(BaseModel):
 
             for task in done:
                 result = task.result()
-                if result is not None:
+                if result is not None and len(result) > 0:
                     return result
 
             if not pending:
@@ -119,13 +121,13 @@ class CRUD(BaseModel):
 
     async def _get_by_manager(
         self, *, manager: type[DataManager], query: Dict[str, Any]
-    ) -> List[Document] | Document | None:
+    ) -> List[BaseModel] | BaseModel | None:
         try:
             data = await manager.get(query=query)
             if data:
                 if isinstance(data, List):
-                    return [self.model.model_validate(item) for item in data]
-                return self.model.model_validate(data)
+                    return [self.validate_response(item) for item in data]
+                return self.validate_response(data)
             return None
 
         except Exception:
@@ -133,17 +135,19 @@ class CRUD(BaseModel):
 
     async def _create_by_manager(
         self, manager: Type[DataManager], create_data: List[Dict[str, Any]]
-    ) -> List[Document]:
+    ) -> List[BaseModel]:
         try:
             data = await manager.create(create_data)
             if data:
                 if isinstance(data, List):
-                    return [self.model.model_validate(item) for item in data]
-                return [self.model.model_validate(data)]
+                    ld = [self.validate_response(item) for item in data]
+                    return ld
+                else:
+                    return [self.validate_response(data)]
+            return []
 
-        except Exception:
-            pass
-        finally:
+        except Exception as e:
+            print(e)
             return []
 
     async def _update_by_manager(
@@ -169,3 +173,8 @@ class CRUD(BaseModel):
 
         except Exception:
             return False
+
+    def validate_response(self, item: Dict[str, Any]) -> BaseModel:
+        if self.response_schema:
+            return self.response_schema.model_validate(item)
+        return self.model.model_validate(item)
