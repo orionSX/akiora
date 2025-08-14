@@ -7,26 +7,25 @@ from models.DataManager import CreateFail, ReadFail, UpdateFail, DeleteFail, Dat
 class CRUD:
     data_manager: DataManager
     model: Type[Document]
-    response_schema: Type[BaseModel] | None = None
 
     def __init__(
         self,
         data_manager: DataManager,
         model: Type[Document],
-        response_schema: Type[BaseModel] | None = None,
     ):
         self.data_manager = data_manager
         self.model = model
-        self.response_schema = response_schema
 
     async def get(
         self,
         query: BaseModel,
+        response_schema: Type[BaseModel] | None = None,
     ) -> List[BaseModel]:
         try:
             valid_query = await self.model.get_find_query(query)
             return self.validate_response(
-                await self.data_manager.get(query=valid_query)
+                await self.data_manager.get(query=valid_query),
+                response_schema=response_schema,
             )
         except Exception as e:
             raise ReadFail
@@ -34,11 +33,13 @@ class CRUD:
     async def create(
         self,
         create_data: Sequence[BaseModel],
+        response_schema: Type[BaseModel] | None = None,
     ) -> List[BaseModel]:
         try:
             valid_create_data = await self.model.get_create_data(create_data)
             return self.validate_response(
-                await self.data_manager.create(create_data=valid_create_data)
+                await self.data_manager.create(create_data=valid_create_data),
+                response_schema=response_schema,
             )
         except Exception:
             raise CreateFail
@@ -68,8 +69,10 @@ class CRUD:
         except Exception:
             raise DeleteFail
 
-    def validate_response(self, items: List[Dict[str, Any]]) -> List[BaseModel]:
+    def validate_response(
+        self, items: List[Dict[str, Any]], response_schema: Type[BaseModel] | None
+    ) -> List[BaseModel]:
         # do i need to sep return to single | list | none?
-        if self.response_schema:
-            return [self.response_schema.model_validate(x) for x in items]
+        if response_schema:
+            return [response_schema.model_validate(x) for x in items]
         return [self.model.model_validate(x) for x in items]

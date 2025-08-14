@@ -1,10 +1,9 @@
-from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db_clients import MongoDB, DragonClient
-from settings import lifespan, ORIGINS
+from settings import ORIGINS
+from main import app
 
 
-app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ORIGINS,
