@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Sequence
 from abc import abstractmethod
 from bson import ObjectId
 
@@ -16,7 +16,6 @@ class Document(BaseModel):
     @field_validator("id", mode="before")
     @classmethod
     def convert_objectid_to_str(cls, v):
-        """Convert ObjectId to string if needed"""
         if isinstance(v, ObjectId):
             return str(v)
         return v
@@ -31,4 +30,6 @@ class Document(BaseModel):
 
     @classmethod
     @abstractmethod
-    async def get_create_data(cls, data: BaseModel) -> List[Dict[str, Any]]: ...
+    async def get_create_data(
+        cls, data: Sequence[BaseModel]
+    ) -> List[Dict[str, Any]]: ...

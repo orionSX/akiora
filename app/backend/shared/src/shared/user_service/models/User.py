@@ -1,8 +1,8 @@
-from models.Document import Document
-from pydantic import BaseModel, EmailStr, Field
-from schemas.user_service.User import GetUser, CreateUser
-from schemas.user_service.user_complex_fields import Socials
-from typing import List, Dict, Any
+from ...base.Document import Document
+from pydantic import BaseModel, Field
+from ..schemas.User import GetUser, CreateUser
+from ..schemas.UserComplexFields import Socials
+from typing import List, Dict, Any, Sequence
 
 from datetime import datetime, UTC
 from bson import ObjectId
@@ -71,7 +71,5 @@ class User(Document):
     async def get_update_data(cls, data: BaseModel) -> Dict[str, Any]: ...
 
     @classmethod
-    async def get_create_data(cls, data: BaseModel) -> List[Dict[str, Any]]:
-        if isinstance(data, CreateUser):
-            return [data.model_dump(exclude={"id"})]
-        return []
+    async def get_create_data(cls, data: Sequence[BaseModel]) -> List[Dict[str, Any]]:
+        return [x.model_dump(exclude={"id"}) for x in data]

@@ -1,7 +1,7 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Body
 from helpers.CRUD_instances import user_crud
-from schemas.user_service.User import CreateUser, GetUser
-from typing import Annotated
+from shared.user_service.schemas.User import CreateUser, GetUser
+from typing import Annotated, Sequence
 
 router = APIRouter(prefix="/users", tags=["UserService Route"])
 
@@ -14,7 +14,9 @@ async def get_all_users(query: Annotated[GetUser, Query()]):
 
 
 @router.post("/")
-async def create_user(create_data: CreateUser):
-    if users := await user_crud.create(create_data):
+async def create_users(
+    create_data: Annotated[Sequence[CreateUser], Body()],
+):  # Sequence cus Lists are invariant (List[child] != List[papa]
+    if users := await user_crud.create(create_data=create_data):
         return users
     raise HTTPException(status_code=422)

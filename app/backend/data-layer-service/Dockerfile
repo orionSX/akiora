@@ -4,10 +4,13 @@ WORKDIR /app
 
 RUN pip install uv
 
+COPY ../shared/ /shared/
 
-COPY pyproject.toml ./
+COPY ./data-layer-service/pyproject.toml ./
+
 RUN uv pip install --system .
-COPY . .
+
+COPY ./data-layer-service .
 
 
 

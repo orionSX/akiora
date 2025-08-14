@@ -7,7 +7,7 @@ class GetUser(BaseModel):
     nicknames: List[str] | None = Field(None)
     gender: str | None = Field(None)
     roles: List[str] | None = Field(None)
-    conjuction: bool = Field(True)
+    conjuction: bool | None = Field(None)
 
 
 class CreateUser(BaseModel):

@@ -38,7 +38,8 @@ services:
 
   data-layer-service:
     build:
-      context: ./app/data-layer-service
+      context: ./app/backend/
+      dockerfile: ./data-layer-service/Dockerfile
     command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"

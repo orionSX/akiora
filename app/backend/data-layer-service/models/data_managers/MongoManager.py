@@ -1,9 +1,7 @@
-from fastapi import Depends
 from db_clients import _get_mongo
 from typing import TypeVar, Dict, Any, List, Type, Generic
-from motor.motor_asyncio import AsyncIOMotorCollection
 from bson import ObjectId
-from models.Document import Document
+from shared.base.Document import Document
 
 
 T = TypeVar("T", bound=Document)
@@ -37,13 +35,13 @@ class MongoManager(Generic[T]):
         result = await collection.insert_many(create_data)
         if result.inserted_ids:
             t = await cls._get_many_by_id(result.inserted_ids, collection)
-            print(f"{t=}")
             return t
         return []
 
     @classmethod
     async def update(
         cls,
+        *,
         query: Dict[str, Any],
         update_data: Dict[str, Any],
     ) -> bool:

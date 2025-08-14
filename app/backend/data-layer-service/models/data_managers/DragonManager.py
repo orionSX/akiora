@@ -1,16 +1,11 @@
 from db_clients import DragonClient
-from datetime import timedelta
 from typing import Dict, Any, List, TypeVar, Generic, Type
 import pickle
 import zlib
-from models.Document import Document
-from pydantic import validate_call, ConfigDict
+from shared.base.Document import Document
+from settings import CACHE_EXPIRE_TIME
 
-# orjson could be used maybe idk yet
-validate_call = validate_call(config=ConfigDict(arbitrary_types_allowed=True))
 T = TypeVar("T", bound=Document)
-
-_CACHE_EXPIRE_TIME = timedelta(hours=3)
 
 
 class DragonManager(Generic[T]):
@@ -38,7 +33,7 @@ class DragonManager(Generic[T]):
         cache = DragonClient.get_client()
         pickled_data = pickle.dumps(data)
         compressed_data = zlib.compress(pickled_data, level=6)
-        await cache.set(key, compressed_data, ex=_CACHE_EXPIRE_TIME)
+        await cache.set(key, compressed_data, ex=CACHE_EXPIRE_TIME)
         return True
 
     @classmethod
@@ -82,20 +77,20 @@ class DragonManager(Generic[T]):
     @classmethod
     async def create(
         cls,
+        key: Dict[str, Any],
         create_data: List[Dict[str, Any]],
     ) -> List[Dict[str, Any]]:
-        valid_key = await cls._get_valid_key({"last_created": True})
+        valid_key = await cls._get_valid_key(key)
         await cls.set_data(key=valid_key, data=create_data)
-
         return []
 
     @classmethod
     async def update(
         cls,
+        *,
         query: Dict[str, Any],
         update_data: Dict[str, Any],
     ) -> bool:
         valid_key = await cls._get_valid_key(query)
         await cls.set_data(key=valid_key, data=update_data)
-
         return True
