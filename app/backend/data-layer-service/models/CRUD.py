@@ -4,10 +4,20 @@ from shared.base.Document import Document
 from models.DataManager import CreateFail, ReadFail, UpdateFail, DeleteFail, DataManager
 
 
-class CRUD(BaseModel):
+class CRUD:
     data_manager: DataManager
     model: Type[Document]
     response_schema: Type[BaseModel] | None = None
+
+    def __init__(
+        self,
+        data_manager: DataManager,
+        model: Type[Document],
+        response_schema: Type[BaseModel] | None = None,
+    ):
+        self.data_manager = data_manager
+        self.model = model
+        self.response_schema = response_schema
 
     async def get(
         self,
@@ -18,7 +28,7 @@ class CRUD(BaseModel):
             return self.validate_response(
                 await self.data_manager.get(query=valid_query)
             )
-        except Exception:
+        except Exception as e:
             raise ReadFail
 
     async def create(

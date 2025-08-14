@@ -1,6 +1,7 @@
-from models.data_managers.MongoManager import MongoManager
+from models.data_managers.MongoManager import MongoManager, T
 from models.data_managers.DragonManager import DragonManager
-from typing import Type, Dict, Any, List
+from typing import Type, Dict, Any, List, Generic
+
 
 from asyncio import (
     create_task as asyncio_create_task,
@@ -20,8 +21,8 @@ class DataManager:
 
     async def get(self, query: Dict[str, Any]) -> List[Dict[str, Any]]:
         tasks = [
-            asyncio_create_task(self.db.get(query=query)),
-            asyncio_create_task(self.cache.get(query=query)),
+            asyncio_create_task(self.db.get(query=query), name="db"),
+            asyncio_create_task(self.cache.get(query=query), name="cache"),
         ]
 
         while True:
@@ -29,12 +30,11 @@ class DataManager:
                 tasks, return_when=ASYNCIO_FIRST_COMPLETED
             )
 
-            # done is a set with objects passed through our tasks, so it returns same object which means
-            # we can access them with list.index(elem)
             for task in done:
                 result = task.result()
+                source = task.get_name()
                 if result:
-                    if tasks.index(task) == 0:  # we got data from db
+                    if source == "db":
                         # do i fire background taks here or await idk
                         await self.cache.create(query, result)
                     for t in pending:
