@@ -1,0 +1,232 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import "../styles/profile.css";
+---
+
+<BaseLayout
+  title="Akiora Profile"
+  description="Akiora player profile"
+  pageClass="profile-page"
+>
+  <main class="profile-shell">
+    <section class="profile-intro">
+      <p class="eyebrow">Authenticated channel</p>
+      <h1>Player profile control room.</h1>
+      <p class="hero-copy">
+        Load current session from <code>/api/auth/me</code>, edit player fields,
+        then commit changes directly to the backend profile endpoint.
+      </p>
+      <a class="ghost-link" href="/">Back to login</a>
+    </section>
+
+    <section class="profile-stage">
+      <article class="neon-card profile-card profile-card-summary">
+        <div class="card-heading">
+          <p class="card-kicker">Session</p>
+          <h2>Current identity</h2>
+        </div>
+
+        <div id="profile-summary" class="profile-summary is-loading">
+          <div class="profile-avatar-shell">
+            <img
+              id="profile-avatar-preview"
+              class="profile-avatar"
+              src="/violet-yang.svg"
+              alt="Profile avatar preview"
+            />
+          </div>
+          <div class="profile-meta">
+            <strong id="summary-name">Loading...</strong>
+            <span id="summary-email">Waiting for session</span>
+            <code id="summary-id">-</code>
+          </div>
+        </div>
+
+        <div id="profile-status" class="status-line" aria-live="polite"></div>
+      </article>
+
+      <article class="neon-card profile-card">
+        <div class="card-heading">
+          <p class="card-kicker">Edit</p>
+          <h2>Update profile</h2>
+        </div>
+
+        <form id="profile-form" class="form-grid" data-api-base="/api">
+          <label class="field">
+            <span>Name</span>
+            <input id="profile-name" name="name" type="text" maxlength="32" required />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input id="profile-email" name="email" type="email" maxlength="255" required />
+          </label>
+          <label class="field field-wide">
+            <span>Avatar URL</span>
+            <input id="profile-avatar" name="avatar" type="url" placeholder="https://..." />
+          </label>
+          <label class="field field-wide">
+            <span>About</span>
+            <textarea
+              id="profile-about"
+              name="about"
+              rows="6"
+              maxlength="4096"
+              placeholder="Add your role, team identity and arena story."
+            ></textarea>
+          </label>
+
+          <div class="profile-actions">
+            <button class="neon-button neon-button-primary" type="submit">
+              Save changes
+            </button>
+            <button class="neon-button neon-button-secondary" id="refresh-profile" type="button">
+              Refresh
+            </button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const apiBase = "/api";
+    const form = document.querySelector("#profile-form");
+    const refreshButton = document.querySelector("#refresh-profile");
+    const statusNode = document.querySelector("#profile-status");
+
+    const state = {
+      user: null,
+    };
+
+    const setStatus = (message, tone = "neutral") => {
+      if (!statusNode) return;
+      statusNode.textContent = message;
+      statusNode.dataset.tone = tone;
+    };
+
+    const parseError = async (response) => {
+      try {
+        const payload = await response.json();
+        return payload?.error?.message ?? `Request failed with ${response.status}`;
+      } catch {
+        return `Request failed with ${response.status}`;
+      }
+    };
+
+    const applyUser = (user) => {
+      state.user = user;
+
+      const nameInput = document.querySelector("#profile-name");
+      const emailInput = document.querySelector("#profile-email");
+      const avatarInput = document.querySelector("#profile-avatar");
+      const aboutInput = document.querySelector("#profile-about");
+      const avatarPreview = document.querySelector("#profile-avatar-preview");
+      const summaryName = document.querySelector("#summary-name");
+      const summaryEmail = document.querySelector("#summary-email");
+      const summaryId = document.querySelector("#summary-id");
+      const summary = document.querySelector("#profile-summary");
+
+      if (nameInput) nameInput.value = user.name ?? "";
+      if (emailInput) emailInput.value = user.email ?? "";
+      if (avatarInput) avatarInput.value = user.avatar ?? "";
+      if (aboutInput) aboutInput.value = user.about ?? "";
+      if (avatarPreview) avatarPreview.src = user.avatar || "/violet-yang.svg";
+      if (summaryName) summaryName.textContent = user.name;
+      if (summaryEmail) summaryEmail.textContent = user.email;
+      if (summaryId) summaryId.textContent = user.id;
+      summary?.classList.remove("is-loading");
+    };
+
+    const loadProfile = async () => {
+      setStatus("Loading profile...", "neutral");
+
+      const response = await fetch(`${apiBase}/auth/me`, {
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        window.location.href = "/";
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const user = await response.json();
+      applyUser(user);
+      setStatus("Profile synced from backend.", "success");
+    };
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!state.user) return;
+
+      const name = document.querySelector("#profile-name")?.value?.trim() ?? "";
+      const email = document.querySelector("#profile-email")?.value?.trim() ?? "";
+      const avatar = document.querySelector("#profile-avatar")?.value?.trim() ?? "";
+      const about = document.querySelector("#profile-about")?.value ?? "";
+
+      const payload = {};
+
+      if (name !== state.user.name) payload.name = name;
+      if (email !== state.user.email) payload.email = email;
+
+      if ((state.user.avatar ?? "") !== avatar) {
+        if (avatar) {
+          payload.avatar = avatar;
+        } else {
+          payload.clear_avatar = true;
+        }
+      }
+
+      if ((state.user.about ?? "") !== about) {
+        if (about.trim()) {
+          payload.about = about;
+        } else {
+          payload.clear_about = true;
+        }
+      }
+
+      if (Object.keys(payload).length === 0) {
+        setStatus("No profile changes detected.", "neutral");
+        return;
+      }
+
+      setStatus("Saving changes...", "neutral");
+
+      try {
+        const response = await fetch(`${apiBase}/users/${state.user.id}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(await parseError(response));
+        }
+
+        const user = await response.json();
+        applyUser(user);
+        setStatus("Profile updated.", "success");
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to update profile", "error");
+      }
+    });
+
+    refreshButton?.addEventListener("click", async () => {
+      try {
+        await loadProfile();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Failed to refresh profile", "error");
+      }
+    });
+
+    loadProfile().catch((error) => {
+      setStatus(error instanceof Error ? error.message : "Failed to load profile", "error");
+    });
+  </script>
+</BaseLayout>

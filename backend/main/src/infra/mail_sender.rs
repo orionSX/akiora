@@ -14,6 +14,10 @@ impl MailSender {
     #[instrument(ret, err)]
     pub fn new() -> Result<Self> {
         let smtp_host = env::var("SMTP_SERVER")?;
+        let smtp_port = env::var("SMTP_PORT")
+            .ok()
+            .and_then(|port| port.parse::<u16>().ok())
+            .unwrap_or(587);
         let smtp_username = env::var("EMAIL_ADDRESS")?;
         let smtp_password = env::var("EMAIL_PASSWORD")?;
         let from_email = env::var("EMAIL_ADDRESS")?;
@@ -21,7 +25,8 @@ impl MailSender {
 
         let creds = Credentials::new(smtp_username, smtp_password);
 
-        let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_host)?
+        let mailer = AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous(&smtp_host)
+            .port(smtp_port)
             .credentials(creds)
             .build();
 

@@ -1,0 +1,34 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  pageClass?: string;
+}
+
+const {
+  title,
+  description = "Akiora neon interface",
+  pageClass = "",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body class={pageClass}>
+    <div class="background-grid" aria-hidden="true"></div>
+    <div class="background-vignette" aria-hidden="true"></div>
+    <img class="yang-symbol yang-symbol-left" src="/blue-yang.svg" alt="" aria-hidden="true" />
+    <img class="yang-symbol yang-symbol-right" src="/red-yang.svg" alt="" aria-hidden="true" />
+    <img class="yang-symbol yang-symbol-core" src="/violet-yang.svg" alt="" aria-hidden="true" />
+    <slot />
+  </body>
+</html>

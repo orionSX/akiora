@@ -1,0 +1,4 @@
+target
+.env
+.git
+Cargo.toml.orig

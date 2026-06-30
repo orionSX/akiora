@@ -1,11 +1,334 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <div>Hello</div>
-</body>
-</html>
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import "../styles/auth.css";
+---
+
+<BaseLayout
+  title="Akiora Login"
+  description="Akiora login and account bootstrap"
+  pageClass="auth-page"
+>
+  <main class="auth-shell">
+    <section class="auth-hero">
+      <p class="eyebrow">Blue side. Red side. One arena.</p>
+      <h1>Neon gateway for the next lobby war.</h1>
+      <p class="hero-copy">
+        Akiora starts with a two-step email challenge. Blue energy on the left,
+        red pressure on the right, violet pulse in the center.
+      </p>
+
+      <div class="hero-chips">
+        <span>Cookie sessions via Actix Identity</span>
+        <span>3 attempts per email</span>
+        <span>5 minute cooldown on lock</span>
+      </div>
+
+      <div class="hero-panels">
+        <article class="intel-panel intel-panel-blue">
+          <h2>Blue Protocol</h2>
+          <p>Start login, receive code by email, finish challenge, move to profile.</p>
+        </article>
+        <article class="intel-panel intel-panel-red">
+          <h2>Red Protocol</h2>
+          <p>Need a user first. Bootstrap one account here, then use the same email to login.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="auth-stack" data-api-base="/api">
+      <article class="neon-card auth-card">
+        <div class="card-heading">
+          <p class="card-kicker">Auth / Step 1</p>
+          <h2>Request challenge</h2>
+        </div>
+
+        <form id="login-start-form" class="form-grid">
+          <label class="field">
+            <span>Email</span>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              placeholder="captain@akiora.gg"
+              autocomplete="email"
+              required
+            />
+          </label>
+          <button class="neon-button neon-button-primary" type="submit">
+            Start login
+          </button>
+        </form>
+
+        <div id="login-start-status" class="status-line" aria-live="polite"></div>
+      </article>
+
+      <article class="neon-card auth-card auth-card-finish is-hidden" id="finish-card">
+        <div class="card-heading">
+          <p class="card-kicker">Auth / Step 2</p>
+          <h2>Finish challenge</h2>
+        </div>
+
+        <div class="challenge-brief">
+          <div>
+            <span>Challenge id</span>
+            <strong id="challenge-id">-</strong>
+          </div>
+          <div>
+            <span>Expires</span>
+            <strong id="challenge-expires">-</strong>
+          </div>
+          <div>
+            <span>Attempts left</span>
+            <strong id="challenge-attempts">-</strong>
+          </div>
+        </div>
+
+        <form id="login-finish-form" class="form-grid">
+          <label class="field">
+            <span>Email</span>
+            <input id="finish-email" type="email" readonly />
+          </label>
+          <label class="field">
+            <span>Code from email</span>
+            <input
+              id="finish-code"
+              name="code"
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              minlength="6"
+              placeholder="000000"
+              required
+            />
+          </label>
+          <button class="neon-button neon-button-accent" type="submit">
+            Enter arena
+          </button>
+        </form>
+
+        <div id="login-finish-status" class="status-line" aria-live="polite"></div>
+      </article>
+
+      <article class="neon-card auth-card auth-card-register">
+        <div class="card-heading">
+          <p class="card-kicker">Bootstrap</p>
+          <h2>Create user</h2>
+        </div>
+
+        <form id="register-form" class="form-grid">
+          <label class="field">
+            <span>Name</span>
+            <input
+              id="register-name"
+              name="name"
+              type="text"
+              maxlength="32"
+              placeholder="Blue Captain"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input
+              id="register-email"
+              name="email"
+              type="email"
+              placeholder="captain@akiora.gg"
+              autocomplete="email"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>Avatar URL</span>
+            <input
+              id="register-avatar"
+              name="avatar"
+              type="url"
+              placeholder="https://..."
+            />
+          </label>
+          <label class="field field-wide">
+            <span>About</span>
+            <textarea
+              id="register-about"
+              name="about"
+              rows="4"
+              maxlength="4096"
+              placeholder="Tell the arena who you are."
+            ></textarea>
+          </label>
+          <button class="neon-button neon-button-secondary" type="submit">
+            Create account
+          </button>
+        </form>
+
+        <div id="register-status" class="status-line" aria-live="polite"></div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const apiBase = "/api";
+    const pendingLogin = {
+      email: "",
+      challengeId: "",
+      challenge: "",
+    };
+
+    const startForm = document.querySelector("#login-start-form");
+    const finishForm = document.querySelector("#login-finish-form");
+    const registerForm = document.querySelector("#register-form");
+    const finishCard = document.querySelector("#finish-card");
+    const startStatus = document.querySelector("#login-start-status");
+    const finishStatus = document.querySelector("#login-finish-status");
+    const registerStatus = document.querySelector("#register-status");
+    const finishEmail = document.querySelector("#finish-email");
+    const challengeIdNode = document.querySelector("#challenge-id");
+    const challengeExpiresNode = document.querySelector("#challenge-expires");
+    const challengeAttemptsNode = document.querySelector("#challenge-attempts");
+
+    const setStatus = (node, message, tone = "neutral") => {
+      if (!node) return;
+      node.textContent = message;
+      node.dataset.tone = tone;
+    };
+
+    const parseError = async (response) => {
+      try {
+        const payload = await response.json();
+        return payload?.error?.message ?? `Request failed with ${response.status}`;
+      } catch {
+        return `Request failed with ${response.status}`;
+      }
+    };
+
+    const checkSession = async () => {
+      try {
+        const response = await fetch(`${apiBase}/auth/me`, {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          window.location.href = "/profile";
+        }
+      } catch {
+        // Ignore initial network failure and let the user operate manually.
+      }
+    };
+
+    startForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const emailInput = document.querySelector("#login-email");
+      const email = emailInput?.value?.trim() ?? "";
+
+      setStatus(startStatus, "Requesting challenge...", "neutral");
+
+      try {
+        const response = await fetch(`${apiBase}/auth/login/start`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        if (!response.ok) {
+          throw new Error(await parseError(response));
+        }
+
+        const payload = await response.json();
+        pendingLogin.email = email;
+        pendingLogin.challengeId = payload.challenge_id;
+        pendingLogin.challenge = payload.challenge;
+
+        if (finishEmail) finishEmail.value = email;
+        if (challengeIdNode) challengeIdNode.textContent = payload.challenge_id;
+        if (challengeExpiresNode) {
+          challengeExpiresNode.textContent = new Date(payload.expires_at).toLocaleString("ru-RU");
+        }
+        if (challengeAttemptsNode) {
+          challengeAttemptsNode.textContent = String(payload.attempts_left);
+        }
+
+        finishCard?.classList.remove("is-hidden");
+        setStatus(startStatus, "Challenge created. Check your email for the code.", "success");
+        setStatus(finishStatus, "Enter the 6-digit code to complete login.", "neutral");
+      } catch (error) {
+        setStatus(startStatus, error instanceof Error ? error.message : "Failed to start login", "error");
+      }
+    });
+
+    finishForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const codeInput = document.querySelector("#finish-code");
+      const code = codeInput?.value?.trim() ?? "";
+
+      setStatus(finishStatus, "Finishing login...", "neutral");
+
+      try {
+        const response = await fetch(`${apiBase}/auth/login/finish`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: pendingLogin.email,
+            challenge_id: pendingLogin.challengeId,
+            challenge: pendingLogin.challenge,
+            code,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(await parseError(response));
+        }
+
+        setStatus(finishStatus, "Login complete. Redirecting to profile...", "success");
+        window.location.href = "/profile";
+      } catch (error) {
+        setStatus(finishStatus, error instanceof Error ? error.message : "Failed to finish login", "error");
+      }
+    });
+
+    registerForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const name = document.querySelector("#register-name")?.value?.trim() ?? "";
+      const email = document.querySelector("#register-email")?.value?.trim() ?? "";
+      const avatar = document.querySelector("#register-avatar")?.value?.trim() ?? "";
+      const about = document.querySelector("#register-about")?.value?.trim() ?? "";
+
+      setStatus(registerStatus, "Creating account...", "neutral");
+
+      try {
+        const response = await fetch(`${apiBase}/users`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            avatar: avatar || null,
+            about: about || null,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(await parseError(response));
+        }
+
+        setStatus(registerStatus, "User created. You can now start login with the same email.", "success");
+        const loginEmail = document.querySelector("#login-email");
+        if (loginEmail) loginEmail.value = email;
+      } catch (error) {
+        setStatus(registerStatus, error instanceof Error ? error.message : "Failed to create account", "error");
+      }
+    });
+
+    checkSession();
+  </script>
+</BaseLayout>

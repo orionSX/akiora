@@ -1,0 +1,167 @@
+.auth-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 520px);
+  gap: 2rem;
+  min-height: 100vh;
+  padding: 4rem clamp(1.2rem, 3vw, 3rem);
+  align-items: center;
+}
+
+.auth-hero {
+  display: grid;
+  gap: 1.4rem;
+  padding: clamp(1rem, 2vw, 2rem);
+}
+
+.auth-hero h1 {
+  max-width: 10ch;
+  font-size: clamp(3.4rem, 7vw, 7rem);
+  text-shadow:
+    0 0 26px rgba(166, 0, 255, 0.16),
+    0 0 60px rgba(255, 0, 42, 0.12);
+}
+
+.hero-copy {
+  max-width: 58ch;
+  font-size: 1.05rem;
+}
+
+.hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.hero-chips span {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.72rem 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  font-size: 0.84rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hero-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.intel-panel {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.intel-panel h2 {
+  margin-bottom: 0.7rem;
+  font-size: 1rem;
+}
+
+.intel-panel p {
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.intel-panel-blue {
+  box-shadow: var(--shadow-cyan);
+}
+
+.intel-panel-red {
+  box-shadow: var(--shadow-red);
+}
+
+.auth-stack {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.auth-card {
+  padding: 1.45rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.3rem;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.challenge-brief {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1.3rem;
+}
+
+.challenge-brief div {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.challenge-brief span {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-soft);
+}
+
+.challenge-brief strong {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.auth-card-register {
+  background:
+    linear-gradient(180deg, rgba(255, 0, 42, 0.08), transparent 20%),
+    var(--bg-panel);
+}
+
+.auth-card-finish {
+  background:
+    linear-gradient(180deg, rgba(6, 182, 212, 0.08), transparent 20%),
+    var(--bg-panel);
+}
+
+@media (max-width: 1200px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    padding-top: 7rem;
+  }
+
+  .auth-hero h1 {
+    max-width: 12ch;
+  }
+}
+
+@media (max-width: 720px) {
+  .auth-shell {
+    padding-inline: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .hero-panels,
+  .challenge-brief {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-hero h1 {
+    font-size: clamp(2.8rem, 16vw, 4.8rem);
+  }
+
+  .auth-card {
+    padding: 1.15rem;
+  }
+}

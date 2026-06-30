@@ -1,0 +1,138 @@
+.profile-shell {
+  display: grid;
+  gap: 2rem;
+  min-height: 100vh;
+  padding: 4rem clamp(1.2rem, 3vw, 3rem);
+}
+
+.profile-intro {
+  display: grid;
+  gap: 1rem;
+  max-width: 72ch;
+}
+
+.profile-intro h1 {
+  max-width: 11ch;
+  font-size: clamp(3rem, 6vw, 5.8rem);
+  text-shadow:
+    0 0 26px rgba(6, 182, 212, 0.14),
+    0 0 56px rgba(166, 0, 255, 0.12);
+}
+
+.profile-stage {
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.profile-card {
+  padding: 1.45rem;
+}
+
+.profile-card-summary {
+  position: sticky;
+  top: 1.4rem;
+}
+
+.profile-summary {
+  display: grid;
+  gap: 1.2rem;
+  margin-top: 1.4rem;
+}
+
+.profile-avatar-shell {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(166, 0, 255, 0.18), transparent 60%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.profile-avatar {
+  width: min(100%, 220px);
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow:
+    0 0 28px rgba(166, 0, 255, 0.18),
+    0 0 18px rgba(6, 182, 212, 0.12);
+}
+
+.profile-meta {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.profile-meta strong {
+  font-size: 1.35rem;
+}
+
+.profile-meta span {
+  color: var(--text-soft);
+}
+
+.profile-meta code {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0.55rem 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.is-loading .profile-avatar {
+  opacity: 0.65;
+  animation: summary-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes summary-pulse {
+  0%,
+  100% {
+    transform: scale(0.98);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+@media (max-width: 980px) {
+  .profile-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-card-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 720px) {
+  .profile-shell {
+    padding-inline: 1rem;
+    padding-bottom: 2rem;
+  }
+
+  .profile-intro h1 {
+    font-size: clamp(2.7rem, 14vw, 4.5rem);
+  }
+
+  .profile-card {
+    padding: 1.15rem;
+  }
+
+  .profile-actions {
+    flex-direction: column;
+  }
+}
