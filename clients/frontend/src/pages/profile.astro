@@ -13,8 +13,8 @@ import "../styles/profile.css";
       <p class="eyebrow">Authenticated channel</p>
       <h1>Player profile control room.</h1>
       <p class="hero-copy">
-        Load current session from <code>/api/auth/me</code>, edit player fields,
-        then commit changes directly to the backend profile endpoint.
+        Load current session from <code>/api/user/me</code>, edit player fields,
+        then commit changes to <code>/api/user/update</code>.
       </p>
       <a class="ghost-link" href="/">Back to login</a>
     </section>
@@ -53,8 +53,8 @@ import "../styles/profile.css";
 
         <form id="profile-form" class="form-grid" data-api-base="/api">
           <label class="field">
-            <span>Name</span>
-            <input id="profile-name" name="name" type="text" maxlength="32" required />
+            <span>Nickname</span>
+            <input id="profile-nickname" name="nickname" type="text" maxlength="255" required />
           </label>
           <label class="field">
             <span>Email</span>
@@ -62,7 +62,7 @@ import "../styles/profile.css";
           </label>
           <label class="field field-wide">
             <span>Avatar URL</span>
-            <input id="profile-avatar" name="avatar" type="url" placeholder="https://..." />
+            <input id="profile-avatar-url" name="avatar_url" type="url" placeholder="https://..." />
           </label>
           <label class="field field-wide">
             <span>About</span>
@@ -107,7 +107,7 @@ import "../styles/profile.css";
     const parseError = async (response) => {
       try {
         const payload = await response.json();
-        return payload?.error?.message ?? `Request failed with ${response.status}`;
+        return payload?.detail ?? payload?.error?.message ?? `Request failed with ${response.status}`;
       } catch {
         return `Request failed with ${response.status}`;
       }
@@ -116,9 +116,9 @@ import "../styles/profile.css";
     const applyUser = (user) => {
       state.user = user;
 
-      const nameInput = document.querySelector("#profile-name");
+      const nicknameInput = document.querySelector("#profile-nickname");
       const emailInput = document.querySelector("#profile-email");
-      const avatarInput = document.querySelector("#profile-avatar");
+      const avatarInput = document.querySelector("#profile-avatar-url");
       const aboutInput = document.querySelector("#profile-about");
       const avatarPreview = document.querySelector("#profile-avatar-preview");
       const summaryName = document.querySelector("#summary-name");
@@ -126,12 +126,12 @@ import "../styles/profile.css";
       const summaryId = document.querySelector("#summary-id");
       const summary = document.querySelector("#profile-summary");
 
-      if (nameInput) nameInput.value = user.name ?? "";
+      if (nicknameInput) nicknameInput.value = user.nickname ?? "";
       if (emailInput) emailInput.value = user.email ?? "";
-      if (avatarInput) avatarInput.value = user.avatar ?? "";
+      if (avatarInput) avatarInput.value = user.avatar_url ?? "";
       if (aboutInput) aboutInput.value = user.about ?? "";
-      if (avatarPreview) avatarPreview.src = user.avatar || "/violet-yang.svg";
-      if (summaryName) summaryName.textContent = user.name;
+      if (avatarPreview) avatarPreview.src = user.avatar_url || "/violet-yang.svg";
+      if (summaryName) summaryName.textContent = user.nickname ?? user.email;
       if (summaryEmail) summaryEmail.textContent = user.email;
       if (summaryId) summaryId.textContent = user.id;
       summary?.classList.remove("is-loading");
@@ -140,7 +140,7 @@ import "../styles/profile.css";
     const loadProfile = async () => {
       setStatus("Loading profile...", "neutral");
 
-      const response = await fetch(`${apiBase}/auth/me`, {
+      const response = await fetch(`${apiBase}/user/me`, {
         credentials: "include",
       });
 
@@ -162,30 +162,22 @@ import "../styles/profile.css";
       event.preventDefault();
       if (!state.user) return;
 
-      const name = document.querySelector("#profile-name")?.value?.trim() ?? "";
+      const nickname = document.querySelector("#profile-nickname")?.value?.trim() ?? "";
       const email = document.querySelector("#profile-email")?.value?.trim() ?? "";
-      const avatar = document.querySelector("#profile-avatar")?.value?.trim() ?? "";
+      const avatarUrl = document.querySelector("#profile-avatar-url")?.value?.trim() ?? "";
       const about = document.querySelector("#profile-about")?.value ?? "";
 
       const payload = {};
 
-      if (name !== state.user.name) payload.name = name;
+      if (nickname !== (state.user.nickname ?? "")) payload.nickname = nickname;
       if (email !== state.user.email) payload.email = email;
 
-      if ((state.user.avatar ?? "") !== avatar) {
-        if (avatar) {
-          payload.avatar = avatar;
-        } else {
-          payload.clear_avatar = true;
-        }
+      if ((state.user.avatar_url ?? "") !== avatarUrl) {
+        payload.avatar_url = avatarUrl || null;
       }
 
       if ((state.user.about ?? "") !== about) {
-        if (about.trim()) {
-          payload.about = about;
-        } else {
-          payload.clear_about = true;
-        }
+        payload.about = about.trim() ? about : null;
       }
 
       if (Object.keys(payload).length === 0) {
@@ -196,7 +188,7 @@ import "../styles/profile.css";
       setStatus("Saving changes...", "neutral");
 
       try {
-        const response = await fetch(`${apiBase}/users/${state.user.id}`, {
+        const response = await fetch(`${apiBase}/user/update`, {
           method: "PATCH",
           credentials: "include",
           headers: {

@@ -16,7 +16,7 @@ class SingleElimMatch(BaseModel):
 
 class SingleElim(BaseModel):
     teams: list[UUID]
-    flat_matches: list[SingleElimMatch]
+    flat_matches: list[SingleElimMatch] = []
 
     def build_bracket(self):
         n_teams = len(self.teams)
@@ -68,6 +68,7 @@ class SingleElim(BaseModel):
             current_round_number = next_round_number
 
         flat_matches = []
-        for x in self.rounds:
+        for x in rounds:
             flat_matches.extend(x)
         self.flat_matches = flat_matches
+        return self.flat_matches

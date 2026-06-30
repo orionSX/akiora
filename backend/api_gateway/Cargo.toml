@@ -1,0 +1,19 @@
+[package]
+name = "api_gateway"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.103"
+axum = "0.8.9"
+bytes = "1.12.0"
+chrono = "0.4.45"
+fred = { version = "10.1.0", features = ["i-all"] }
+log = "0.4.33"
+pretty_env_logger = "0.5.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+tokio = { version = "1.52.3", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = "0.3.23"
+uuid = { version = "1.23.4", features = ["v4", "v7"] }

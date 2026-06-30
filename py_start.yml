@@ -1,0 +1,74 @@
+services:
+  core:
+    build:
+      context: ./backend/core
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      CORE_HOST: ${CORE_HOST:-0.0.0.0}
+      CORE_PORT: ${CORE_PORT:-8000}
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017}
+      MONGO_DB: ${MONGO_DB:-game_service_db}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_TTL: ${REDIS_TTL:-300}
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      SMTP_SERVER: ${SMTP_SERVER:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      EMAIL_ADDRESS: ${EMAIL_ADDRESS:-noreply@example.com}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      COMMUNITY_GRPC_ADDRESS: ${COMMUNITY_GRPC_ADDRESS:-localhost:50051}
+      ENV_TYPE: ${ENV_TYPE:-docker}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${CORE_PORT:-8000}:${CORE_PORT:-8000}"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import os,urllib.request; urllib.request.urlopen(f\"http://127.0.0.1:{os.environ.get('CORE_PORT', '8000')}/health\")",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  mongo:
+    image: mongo:8
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  mongo-data:
+  redis-data:

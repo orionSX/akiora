@@ -5,6 +5,8 @@ from redis.asyncio import Redis
 
 
 from modules.auth import AuthService
+from modules.community.services import UserService
+from modules.game import TournamentService
 from infra import RedisManager, RedisService, MailSender, settings
 
 
@@ -38,15 +40,25 @@ class ServiceProvider(Provider):
     scope = Scope.APP
 
     @provide(scope=Scope.REQUEST)
+    def get_user_service(self) -> UserService:
+        return UserService()
+
+    @provide(scope=Scope.REQUEST)
+    def get_tournament_service(self) -> TournamentService:
+        return TournamentService()
+
+    @provide(scope=Scope.REQUEST)
     def get_auth_service(
         self,
         mail_service: MailSender,
         redis_service: RedisService,
+        user_service: UserService,
     ) -> AuthService:
         return AuthService(
             secret_key=settings.secret_key,
             mailer=mail_service,
             redis_service=redis_service,
+            user_service=user_service,
         )
 
 

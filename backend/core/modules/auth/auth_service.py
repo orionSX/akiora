@@ -1,10 +1,10 @@
 from infra.redis import RedisService
 from infra.mail import MailSender
-from community.services import UserService
+from modules.community.services import UserService
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from typing import Optional, Dict, Any, Tuple
 from uuid import uuid7
-from utils import time_now
+from modules.utils import time_now
 from datetime import timedelta
 import secrets
 import string
@@ -42,7 +42,7 @@ class AuthService:
             ttl=300,
         )
 
-        await self.mailer.send_verification_email(email, verification_code)
+        self.mailer.send_email(email, "auth", verification_code)
 
         token = self.serializer.dumps(
             {"email": email, "purpose": "email_verification"}, salt="email-verification"
@@ -63,7 +63,7 @@ class AuthService:
             email = data.get("email")
             if not email:
                 return None
-        except SignatureExpired, BadSignature:
+        except (SignatureExpired, BadSignature):
             return None
 
         stored_data = await self.rs.get(
@@ -133,7 +133,7 @@ class AuthService:
 
             return session_data
 
-        except SignatureExpired, BadSignature:
+        except (SignatureExpired, BadSignature):
             return None
 
     async def refresh_session(self, token: str) -> Optional[str]:
@@ -163,7 +163,7 @@ class AuthService:
                 {"session_id": session_id, "user_id": user_id}, salt="session-auth"
             )
 
-        except SignatureExpired, BadSignature:
+        except (SignatureExpired, BadSignature):
             return None
 
     async def invalidate_session(self, token: str) -> bool:
@@ -174,6 +174,6 @@ class AuthService:
             if session_id:
                 await self.rs.delete(f"{self.redis_prefix}{session_id}")
                 return True
-        except SignatureExpired, BadSignature:
+        except (SignatureExpired, BadSignature):
             pass
         return False

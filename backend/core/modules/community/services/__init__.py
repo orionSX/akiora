@@ -1,1 +1,1 @@
-from community.services.user import UserService
+from modules.community.services.user import UserService

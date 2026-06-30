@@ -9,15 +9,31 @@ class Settings(BaseSettings):
         env_file=".env",
     )
 
-    redis_url: str = "redis://localhost:6379/0"
-    redis_ttl: int = 0
+    core_host: str = "0.0.0.0"
+    core_port: int = 8000
 
-    mongo_url: str = "mongodb://localhost:27017/?replicaSet=rs0"
+    redis_url: str = "redis://localhost:6379/0"
+    redis_ttl: int = 300
+
+    mongo_url: str = "mongodb://localhost:27017"
     mongo_db: str = "game_service_db"
 
-    env_type: str = "IGNORE"
-    secret_key: str = "123"
+    env_type: str = "local"
+    secret_key: str = "change-me"
     grpc_port: int = 50051
+
+    smtp_server: str = "localhost"
+    smtp_port: int = 1025
+    email_address: str = "noreply@example.com"
+    email_password: str = ""
+
+    yandex_cid: str = ""
+    yandex_cs: str = ""
+    discord_cid: str = ""
+    discord_cs: str = ""
+
+    community_grpc_address: str = "localhost:50051"
+    allowed_origins: str = ""
 
 
 settings = Settings()

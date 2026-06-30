@@ -20,16 +20,16 @@ class User(Document):
     created_at: datetime = Field(default_factory=time_now)
     updated_at: datetime = Field(default_factory=time_now)
 
-    @field_serializer("id")
+    @field_serializer("id", when_used="json-unless-none")
     def serialize_id(self, id: UUID):
         return str(id)
 
-    @field_serializer("created_at")
+    @field_serializer("created_at", when_used="json-unless-none")
     def serialize_ca(self, dt: datetime):
         return dt.isoformat()
 
-    @field_serializer("last_updated")
-    def serialize_la(self, dt: datetime):
+    @field_serializer("updated_at", when_used="json-unless-none")
+    def serialize_ua(self, dt: datetime):
         return dt.isoformat()
 
     @model_validator(mode="after")
