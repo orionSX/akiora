@@ -42,6 +42,7 @@ pub struct DraftTournament {
     pub id: Uuid,
     pub draft_pool: Vec<DraftPlayer>,
     pub avatar: Option<String>,
+   
     pub status: GameStatus,
     pub about: Option<String>,
     pub prizepool: Option<String>,

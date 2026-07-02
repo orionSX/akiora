@@ -1,0 +1,19 @@
+[project]
+name = "py-core"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "beanie>=2.1.0",
+    "dishka>=1.10.1",
+    "email-validator>=2.3.0",
+    "fastapi>=0.139.0",
+    "granian>=2.7.8",
+    "itsdangerous>=2.2.0",
+    "loguru>=0.7.3",
+    "msgspec>=0.21.1",
+    "pydantic-settings>=2.14.2",
+    "pymongo>=4.17.0",
+    "redis>=8.0.1",
+]

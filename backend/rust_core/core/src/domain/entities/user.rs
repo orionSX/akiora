@@ -30,4 +30,5 @@ impl User {
             updated_at: time_now,
         }
     }
+    
 }

@@ -23,6 +23,15 @@ pub enum Server {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+pub enum HostStatus {
+    Pending,
+    Active,
+    Frozen
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum TeamType {
     Temporary,
     Persistent,
