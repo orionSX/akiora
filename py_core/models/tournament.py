@@ -23,8 +23,8 @@ class Tournament(Document):
     tournament_type: TournamentType
     status: GameStatus = GameStatus.SCHEDULED
     prizepool: Optional[str] = Field(default=None, max_length=256)
-    start_time: datetime
-    draft_start_time: Optional[datetime] = None
+    starts_at: datetime
+    draft_starts_at: Optional[datetime] = None
     team_size: Optional[int] = Field(default=None, ge=1, le=7)
     team_max_count: Optional[int] = Field(default=None, ge=2, le=512)
     draft_algorithm: Optional[PlayerDraft] = None
@@ -39,8 +39,8 @@ class Tournament(Document):
     @field_serializer(
         "created_at",
         "updated_at",
-        "draft_start_time",
-        "start_time",
+        "draft_starts_at",
+        "starts_at",
         when_used="json-unless-none",
     )
     def serialize_datetime(self, value: datetime):

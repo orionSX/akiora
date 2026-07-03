@@ -12,6 +12,11 @@ class HostStatus(Enum):
     FROZEN = "frozen"
 
 
+class VerificationRequest(Enum):
+    PENDING = "pending"
+    VERIFIED = "verified"
+
+
 class Role(Enum):
     TOP = "top"
     JG = "jg"
@@ -24,6 +29,14 @@ class GameDraft(Enum):
     IRONMAN = "ironman"
     FEARLESS = "fearless"
     CLASSIC = "classic"
+
+
+class BracketType(Enum):
+    SE = "se"
+    SE_T = "se_t"
+    SWISS = "swiss"
+    DE = "de"
+    RR = "rr"
 
 
 class PlayerDraft(Enum):
