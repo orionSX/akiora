@@ -1,4 +1,4 @@
-from beanie import Document, Indexed, Link
+from beanie import Document, Indexed
 from pydantic import (
     ConfigDict,
     Field,
@@ -18,7 +18,7 @@ class Match(Document):
     status: GameStatus = Field(default=GameStatus.SCHEDULED)
     tournament_id: Annotated[UUID, Indexed()]
     winner: Optional[UUID] = None
-    games: list[Link[Game]] = Field(default_factory=list)
+    games: list[Game] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=time_now)
     updated_at: datetime = Field(default_factory=time_now)
 

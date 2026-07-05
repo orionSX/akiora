@@ -27,13 +27,5 @@ class Settings(BaseSettings):
     email_address: str = "noreply@example.com"
     email_password: str = ""
 
-    yandex_cid: str = ""
-    yandex_cs: str = ""
-    discord_cid: str = ""
-    discord_cs: str = ""
-
-    community_grpc_address: str = "localhost:50051"
-    allowed_origins: str = ""
-
 
 settings = Settings()

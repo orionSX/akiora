@@ -1,7 +1,17 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from uuid import UUID
 from typing import Optional
 import math
+
+
+class Bracket(BaseModel):
+    def build_bracket(self):
+        raise NotImplementedError
+
+    def patch_bracket(self, left: UUID, right: UUID):
+        raise NotImplementedError
+
+    pass
 
 
 class SingleElimMatch(BaseModel):
@@ -13,10 +23,17 @@ class SingleElimMatch(BaseModel):
     match_round: int = 0
     next_match: Optional[int] = None
 
+    def add_team(self, team_id: UUID):
+        if self.team1:
+            if team_id != self.team1 and self.team2 is None:
+                self.team2 = team_id
+        else:
+            self.team1 = team_id
 
-class SingleElim(BaseModel):
+
+class SingleElim(Bracket):
     teams: list[UUID]
-    flat_matches: list[SingleElimMatch] = []
+    flat_matches: list[SingleElimMatch] = Field(default_factory=list)
 
     def build_bracket(self):
         n_teams = len(self.teams)
@@ -72,3 +89,65 @@ class SingleElim(BaseModel):
             flat_matches.extend(x)
         self.flat_matches = flat_matches
         return self.flat_matches
+
+    def patch_bracket(self, left: UUID, right: UUID):
+        match_left = next(
+            x for x in self.flat_matches if x.team1 == left or x.team2 == left
+        )
+        match_right = next(
+            x for x in self.flat_matches if x.team1 == right or x.team2 == right
+        )
+        if match_left == match_right:
+            match_left.team1, match_left.team2 = match_left.team2, match_left.team1
+        else:
+            if match_left.team1 == left:
+                match_left.team1 = right
+            elif match_left.team2 == left:
+                match_left.team2 = right
+
+            if match_right.team1 == right:
+                match_right.team1 = left
+            elif match_right.team2 == right:
+                match_right.team2 = left
+
+    def _has_active_prev(self, match_number: int):
+        return any(
+            x
+            for x in self.flat_matches
+            if x.next_match == match_number and x.winner is None
+        )
+
+    def _iterate(self):
+        for x in self.flat_matches:
+            if x.winner:
+                continue
+            if x.team1 and not x.team2:
+                self._set_winner(x.team1)
+
+        return self.flat_matches
+
+    def set_winner(self, team_id: UUID | None):
+        if not team_id:
+            return
+        cur_m = next(
+            (
+                x
+                for x in self.flat_matches
+                if x.winner is None and (x.team1 == team_id or x.team2 == team_id)
+            ),
+            None,
+        )
+        if not cur_m:
+            return
+        if self._has_active_prev(cur_m.match_number):
+            return
+        cur_m.winner = team_id
+        if cur_m and cur_m.next_match:
+            next_m = self.flat_matches[cur_m.next_match]
+            next_m.add_team(cur_m.winner)
+            print()
+            print(
+                f"Winner of match {cur_m.match_number} is {cur_m.winner}",
+                f"Next match is {next_m.match_number} {cur_m.next_match}",
+            )
+        self._iterate()

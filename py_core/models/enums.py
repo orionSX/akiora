@@ -12,6 +12,11 @@ class HostStatus(Enum):
     FROZEN = "frozen"
 
 
+class PoolStatus(Enum):
+    OPENED = "opened"
+    CLOSED = "closed"
+
+
 class VerificationRequest(Enum):
     PENDING = "pending"
     VERIFIED = "verified"

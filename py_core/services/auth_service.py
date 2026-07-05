@@ -5,7 +5,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from typing import Optional, Dict, Any, Tuple
 from uuid import uuid7
 from utils.helpers import time_now
-from datetime import timedelta
+
 import secrets
 import string
 
@@ -117,7 +117,7 @@ class AuthService:
 
         try:
             data = self.serializer.loads(
-                token, salt="session-auth", max_age=timedelta(days=30)
+                token, salt="session-auth", max_age=30 * 24 * 60 * 60
             )
 
             session_id = data.get("session_id")

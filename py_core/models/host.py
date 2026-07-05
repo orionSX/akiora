@@ -8,12 +8,15 @@ from uuid import UUID, uuid7
 from typing import Optional, Annotated
 from datetime import datetime
 from utils.helpers import time_now
+from models.enums import HostStatus
 
 
 class Host(Document):
     id: UUID = Field(default_factory=uuid7)
     owner_id: Annotated[UUID, Indexed(unique=True)]
     avatar_url: Optional[str] = None
+    status: HostStatus = HostStatus.PENDING
+    admins: list[UUID] = Field(default_factory=list)
     about: Optional[str] = Field(default=None, max_length=500)
     nickname: Annotated[Optional[str], Indexed(unique=True)] = Field(
         default=None, max_length=500
